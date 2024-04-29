@@ -75,6 +75,8 @@ function updateNodeAttribute (nodeId, attrName, attrValue) {
 }
 
 function render () {
+    console.log("Rendering...");
+
     layer.destroyChildren();
 
     nodes.value.forEach((node) => {
@@ -96,7 +98,7 @@ function render () {
         circle.addEventListener("pointerup", updateNodes);
     });
 
-    console.log("Rendering...");
+    generateSVG();
 }
 
 function updateNodes () {
@@ -122,8 +124,6 @@ function setup () {
     effect(saveToLocalStorage);
     effect(renderNodeAttributes);
     effect(render);
-
-    generateSVG();
 }
 
 function renderSVGExport (svg, isPreview = false) {
@@ -164,6 +164,8 @@ function postProcessSVG (svgCode) {
 }
 
 async function generateSVG () {
+    console.log("Generate SVG...");
+
     const result = await exportStageSVG(stage, false);
     const processedSVG = postProcessSVG(result);
 
@@ -222,11 +224,6 @@ function setupEventListeners () {
         nodes.value = [];
     });
 
-    exportButton.addEventListener("click", async () => {
-        console.log("Export...");
-        await generateSVG();
-    });
-
     previewSVGButton.addEventListener("click", () => {
         showSVGPreview();
     });
@@ -235,7 +232,6 @@ function setupEventListeners () {
 const sidebarEl = document.querySelector(".sidebar__body");
 const addCircleButton = document.getElementById("add-circle");
 const resetButton = document.getElementById("reset");
-const exportButton = document.getElementById("export-svg");
 const previewSVGButton = document.getElementById("preview-svg");
 
 const isPointerDown = signal(false);
