@@ -1,7 +1,9 @@
 import './style.css'
+
 import Konva from 'konva';
 import { signal, effect, batch } from '@preact/signals-core';
 import { exportStageSVG } from 'react-konva-to-svg';
+import { isNumberAttribute, renderNodeAttribute } from './utils';
 
 function randomNumber (min, max) {
     return Math.random() * (max - min) + min;
@@ -33,29 +35,44 @@ function addCircle (x, y) {
         x: x,
         y: y,
         radius: 35,
-        fill: 'red',
-        stroke: 'black',
+        fill: '#FF0000',
+        stroke: '#000000',
         strokeWidth: 4,
-        draggable: true
+        draggable: true,
+        id: self.crypto.randomUUID()
     });
-}
-
-function renderNodeAttribute ([label, value]) {
-    return `
-        <div class="attribute">
-            <div class="attribute__label">${label}</div>
-            <div class="attribute__value">${value}</div>
-        </div>
-    `;
 }
 
 function renderNodeAttributes () {
     if (focusedNode.value) {
         const attrs = Object.entries(focusedNode.value.getAttrs());
         sidebarEl.innerHTML = attrs.map(renderNodeAttribute).join("");
+
+        const inputs = sidebarEl.querySelectorAll("input");
+
+        inputs.forEach((input) => {
+            input.addEventListener("change", (ev) => {
+                const nodeId = focusedNode.value.getId();
+                updateNodeAttribute(nodeId, ev.target.name, ev.target.value);
+            });
+        });
     }
 }
 
+function updateNodeAttribute (nodeId, attrName, attrValue) {
+    nodes.value = nodes.value.map((node) => {
+        if (node.id === nodeId) {
+            // Parse number attribute to avoid warnings in Konva
+            if (isNumberAttribute(attrName)) {
+                node[attrName] = Number(attrValue);
+            } else {
+                node[attrName] = attrValue;
+            }
+        }
+
+        return node;
+    });
+}
 
 function render () {
     layer.destroyChildren();
@@ -68,7 +85,7 @@ function render () {
 
         circle.addEventListener("pointerdown", () => {
             // Set custom attributes
-            circle.setAttr("isActive", true);
+            circle.setAttr("name", circle.name() || "Node");
 
             batch(() => {
                 focusedNode.value = circle;
@@ -105,17 +122,75 @@ function setup () {
     effect(saveToLocalStorage);
     effect(renderNodeAttributes);
     effect(render);
+
+    generateSVG();
 }
 
-function renderSVGExport (svgCode) {
-    const svgCodeEl = document.querySelector(".export__body");
+function renderSVGExport (svg, isPreview = false) {
+    const previewEl = document.querySelector(".export__body");
 
-    if (svgCodeEl && svgCode) {
-        const codePreview = document.createElement("code");
-        codePreview.innerText = svgCode;
+    if (previewEl && svg) {
+        if (isPreview) {
+            previewEl.innerHTML = svg;
+        } else {
+            const codePreviewEl = document.createElement("code");
+            codePreviewEl.innerText = svg;
 
-        svgCodeEl.innerHTML = null;
-        svgCodeEl.appendChild(codePreview)
+            previewEl.innerHTML = null;
+            previewEl.appendChild(codePreviewEl)
+        }
+    }
+}
+
+function postProcessSVG (svgCode) {
+    const domParser = new DOMParser();
+    const svgDoc = domParser.parseFromString(svgCode, "image/svg+xml");
+    const paths = svgDoc.querySelectorAll("path");
+
+    paths.forEach((path, index) => {
+        const fill = path.getAttribute("fill");
+        const stroke = path.getAttribute("stroke");
+
+        if (fill) {
+            path.setAttribute("fill", `var(--fill-${index}, ${fill})`);
+        }
+
+        if (stroke) {
+            path.setAttribute("stroke", `var(--stroke-${index}, ${stroke})`);
+        }
+    });
+
+    return svgDoc.documentElement.outerHTML;
+}
+
+async function generateSVG () {
+    const result = await exportStageSVG(stage, false);
+    const processedSVG = postProcessSVG(result);
+
+    // Store processed SVG
+    svg.value = processedSVG;
+
+    renderSVGExport(processedSVG);
+}
+
+function showSVGPreview () {
+    const dialog = document.createElement("dialog");
+
+    if (svg.value) {
+        if (document.querySelector("dialog")) {
+            document.querySelector("dialog").remove();
+        }
+
+        document.body.appendChild(dialog);
+
+        dialog.innerHTML = svg.value;
+
+        const closeButton = document.createElement("button");
+        closeButton.textContent = "Close";
+        closeButton.addEventListener("click", () => dialog.close());
+        dialog.appendChild(closeButton);
+
+        dialog.showModal();
     }
 }
 
@@ -149,9 +224,11 @@ function setupEventListeners () {
 
     exportButton.addEventListener("click", async () => {
         console.log("Export...");
-        const result = await exportStageSVG(stage, false);
+        await generateSVG();
+    });
 
-        renderSVGExport(result);
+    previewSVGButton.addEventListener("click", () => {
+        showSVGPreview();
     });
 }
 
@@ -159,10 +236,12 @@ const sidebarEl = document.querySelector(".sidebar__body");
 const addCircleButton = document.getElementById("add-circle");
 const resetButton = document.getElementById("reset");
 const exportButton = document.getElementById("export-svg");
+const previewSVGButton = document.getElementById("preview-svg");
 
 const isPointerDown = signal(false);
 const nodes = signal([]);
 const focusedNode = signal(null);
+const svg = signal(null);
 
 let stage, layer;
 

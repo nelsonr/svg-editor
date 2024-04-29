@@ -1,3 +1,7 @@
+* {
+    box-sizing: border-box;
+}
+
 :root {
     font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
     line-height: 1.5;
@@ -19,6 +23,11 @@ h1:first-child,
 h2:first-child,
 h3:first-child {
     margin-top: 0;
+    margin-bottom: 0;
+}
+
+header {
+    margin-bottom: 1em;
 }
 
 button {
@@ -85,6 +94,12 @@ canvas {
     display: grid;
     grid-template-columns: 1fr 1fr;
     text-transform: capitalize;
+    overflow: hidden;
+    gap: 16px;
+}
+
+.attribute + .attribute {
+    margin-top: 4px;
 }
 
 .attribute__label {
@@ -93,6 +108,13 @@ canvas {
 
 .attribute__value {
     text-align: end;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attribute input {
+    max-width: 100%;
 }
 
 .row {
