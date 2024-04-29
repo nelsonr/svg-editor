@@ -27,18 +27,6 @@ function addNode (node) {
     return nodes;
 }
 
-function addRect (x, y) {
-    return addNode({
-        x: x,
-        y: y,
-        radius: 70,
-        fill: 'red',
-        stroke: 'black',
-        strokeWidth: 4,
-        draggable: true
-    });
-}
-
 function addCircle (x, y) {
     return addNode({
         x: x,
@@ -78,6 +66,9 @@ function render () {
         circle.addEventListener("click", () => focusedNode.value = circle);
 
         circle.addEventListener("pointerdown", () => {
+            // Set custom attributes
+            circle.setAttr("isActive", true);
+
             batch(() => {
                 focusedNode.value = circle;
                 isPointerDown.value = true;
@@ -91,6 +82,7 @@ function render () {
 }
 
 function updateNodes () {
+    console.log("Updating nodes...");
     nodes.value = layer.getChildren().map((node) => node.getAttrs());
 }
 
@@ -108,13 +100,15 @@ function setup () {
 
     importFromLocalStorage();
     setupEventListeners();
-    render();
 
     effect(saveToLocalStorage);
     effect(renderNodeAttributes);
+    effect(render);
 }
 
 function setupEventListeners () {
+    let t = null;
+
     document.body.addEventListener("pointerup", () => {
         isPointerDown.value = false;
     });
@@ -122,6 +116,10 @@ function setupEventListeners () {
     document.body.addEventListener("pointermove", () => {
         if (isPointerDown.value && focusedNode.value) {
             renderNodeAttributes();
+
+            // Update nodes after drag ends
+            clearTimeout(t);
+            t = setTimeout(updateNodes, 1000);
         }
     });
 
