@@ -1,6 +1,7 @@
 import './style.css'
 import Konva from 'konva';
 import { signal, effect, batch } from '@preact/signals-core';
+import { exportStageSVG } from 'react-konva-to-svg';
 
 function randomNumber (min, max) {
     return Math.random() * (max - min) + min;
@@ -106,6 +107,18 @@ function setup () {
     effect(render);
 }
 
+function renderSVGExport (svgCode) {
+    const svgCodeEl = document.querySelector(".export__body");
+
+    if (svgCodeEl && svgCode) {
+        const codePreview = document.createElement("code");
+        codePreview.innerText = svgCode;
+
+        svgCodeEl.innerHTML = null;
+        svgCodeEl.appendChild(codePreview)
+    }
+}
+
 function setupEventListeners () {
     let t = null;
 
@@ -132,12 +145,20 @@ function setupEventListeners () {
 
     resetButton.addEventListener("click", () => {
         nodes.value = [];
-    })
+    });
+
+    exportButton.addEventListener("click", async () => {
+        console.log("Export...");
+        const result = await exportStageSVG(stage, false);
+
+        renderSVGExport(result);
+    });
 }
 
 const sidebarEl = document.querySelector(".sidebar__body");
 const addCircleButton = document.getElementById("add-circle");
 const resetButton = document.getElementById("reset");
+const exportButton = document.getElementById("export-svg");
 
 const isPointerDown = signal(false);
 const nodes = signal([]);

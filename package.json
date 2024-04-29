@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@preact/signals-core": "^1.6.0",
-    "konva": "^9.3.6"
+    "konva": "^9.3.6",
+    "react-konva-to-svg": "^1.0.2"
   }
 }

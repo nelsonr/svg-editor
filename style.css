@@ -30,7 +30,8 @@ button {
 
 main,
 nav,
-aside {
+aside,
+section {
     background-color: #f4f4f4;
     border: 1px solid #333;
     padding: 16px;
@@ -43,7 +44,7 @@ canvas {
 
 #app {
     display: grid;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto 1fr 300px;
     grid-template-columns: auto 300px;
     height: 100vh;
 }
@@ -64,6 +65,22 @@ canvas {
     align-items: center;
 }
 
+#sidebar {
+    grid-column: 2;
+    grid-row: 2 / 4;
+}
+
+#export {
+    grid-column: 1 / 2;
+    grid-row: 3;
+    overflow: hidden;
+}
+
+.export__body {
+    overflow: auto;
+    max-width: 100%;
+}
+
 .attribute {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -76,4 +93,22 @@ canvas {
 
 .attribute__value {
     text-align: end;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+}
+
+.space-between {
+    justify-content: space-between;
+}
+
+.spacer {
+    width: 16px;
+}
+
+.btn-danger {
+    background-color: orangered;
+    color: #FFF;
 }
