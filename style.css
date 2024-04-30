@@ -51,6 +51,11 @@ canvas {
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
 }
 
+svg {
+    background-color: #FFF;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
 #app {
     display: grid;
     grid-template-rows: auto 1fr 300px;
@@ -166,4 +171,21 @@ dialog[open] {
 
 .lowercase {
     text-transform: lowercase;
+}
+
+.custom-properties-sidebar {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 16px;
+}
+
+.custom-properties-list {
+    overflow: auto;
+}
+
+.preview {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    align-items: center;
+    gap: 16px;
 }

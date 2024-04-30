@@ -4,7 +4,7 @@ import Konva from 'konva';
 import { signal, effect, batch } from '@preact/signals-core';
 import { exportStageSVG } from 'react-konva-to-svg';
 import { isNumberAttribute, renderNodeAttribute, randomNumber, randomColor, createModal } from './utils';
-import { renderConfigEditor, setupConfigEditorEvents } from './configEditor';
+import { onReady, renderConfigEditor, setupConfigEditorEvents } from './configEditor';
 
 function importFromLocalStorage () {
     console.log("Importing from local storage...");
@@ -209,7 +209,7 @@ function showSVGPreview () {
 
     if (svg.value) {
         modal.innerHTML = renderConfigEditor(svg.value);
-        setupConfigEditorEvents(modal);
+        onReady(modal);
         modal.showModal();
     }
 }
