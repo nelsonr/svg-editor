@@ -19,9 +19,10 @@ body {
     min-height: 100vh;
 }
 
-h1:first-child,
-h2:first-child,
-h3:first-child {
+h1,
+h2,
+h3,
+pre {
     margin-top: 0;
     margin-bottom: 0;
 }

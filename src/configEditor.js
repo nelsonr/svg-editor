@@ -13,16 +13,18 @@ export function renderConfigEditor (svg) {
                     <h3>Preview</h3>
 
                     <div>${svg.outerHTML}</div>
+                    
+                    <h3>JSON</h3>
+                    
+                    <div>
+                        <pre>${JSON.stringify(config.value)}</pre>
+                    </div>
                 </section>
                 
                 <div class="custom-properties-sidebar">
                     <h3>Custom Properties</h3>
 
                     <div class="custom-properties-list">${renderCustomProperties(svg)}</div>
-
-                    <div class="row end">
-                        <button id="custom-properties-save">Save</button>
-                    </div>
                 </div>
             </div>
             
@@ -33,16 +35,15 @@ export function renderConfigEditor (svg) {
     `;
 }
 
-
 export function onReady (rootEl) {
     setupConfigEditorEvents(rootEl);
     onRender(rootEl);
 }
 
-
 export function onRender (rootEl) {
     const svgEl = rootEl.querySelector("svg");
     applyConfigToSVG(svgEl, config.value);
+    showConfigInJSON(rootEl);
 }
 
 export function setupConfigEditorEvents (rootEl) {
@@ -61,22 +62,21 @@ export function setupConfigEditorEvents (rootEl) {
     colorInputs.forEach((input) => {
         input.addEventListener("change", (ev) => {
             svgEl.style.setProperty(ev.target.name, ev.target.value);
+            showConfigInJSON(rootEl);
         });
     });
+}
 
-    // Button to save colors to config variable
-    const saveButton = rootEl.querySelector("#custom-properties-save");
+function showConfigInJSON (rootEl) {
+    const colorInputs = Array.from(rootEl.querySelectorAll("input[type=color]"));
+    const computed = colorInputs
+        .map((input) => ({ [input.name]: input.value }))
+        .reduce((acc, val) => Object.assign(acc, val), {});
 
-    if (saveButton) {
-        saveButton.addEventListener("click", () => {
-            const colorInputs = Array.from(rootEl.querySelectorAll("input[type=color]"));
-            const computed = colorInputs
-                .map((input) => ({ [input.name]: input.value }))
-                .reduce((acc, val) => Object.assign(acc, val), {});
+    config.value = computed;
 
-            config.value = computed;
-        });
-    }
+    const codePreview = rootEl.querySelector("pre");
+    codePreview.textContent = JSON.stringify(computed, null, 4);
 }
 
 function applyConfigToSVG (svgEl, config) {
