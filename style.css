@@ -80,6 +80,8 @@ canvas {
 }
 
 #export {
+    display: grid;
+    grid-template-rows: auto 1fr;
     grid-column: 1 / 2;
     grid-row: 3;
     overflow: hidden;
@@ -111,6 +113,8 @@ canvas {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-family: monospace;
+    font-size: 1.1em;
 }
 
 .attribute input {
@@ -120,6 +124,11 @@ canvas {
 .row {
     display: flex;
     flex-direction: row;
+    gap: 16px;
+}
+
+.row.end {
+    justify-content: end;
 }
 
 .space-between {
@@ -133,4 +142,28 @@ canvas {
 .btn-danger {
     background-color: orangered;
     color: #FFF;
+}
+
+dialog {
+    padding: 0;
+}
+
+dialog[open] {
+    display: grid;
+    justify-items: center;
+}
+
+.config-editor {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    padding: 0;
+}
+
+.config-editor > div {
+    padding: 16px;
+    border: 1px solid #333;
+}
+
+.lowercase {
+    text-transform: lowercase;
 }

@@ -1,13 +1,10 @@
-import './style.css'
+import '../style.css'
 
 import Konva from 'konva';
 import { signal, effect, batch } from '@preact/signals-core';
 import { exportStageSVG } from 'react-konva-to-svg';
-import { isNumberAttribute, renderNodeAttribute } from './utils';
-
-function randomNumber (min, max) {
-    return Math.random() * (max - min) + min;
-}
+import { isNumberAttribute, renderNodeAttribute, randomNumber, randomColor, createModal } from './utils';
+import { renderConfigEditor, setupConfigEditorEvents } from './configEditor';
 
 function importFromLocalStorage () {
     console.log("Importing from local storage...");
@@ -30,17 +27,50 @@ function addNode (node) {
     return nodes;
 }
 
-function addCircle (x, y) {
+function addRect (x, y) {
+    // Order of attributes matter when rendering on the Properties sidebar.
     return addNode({
+        type: "rect",
+        name: "Rect",
+        id: self.crypto.randomUUID(),
+        x: x,
+        y: y,
+        width: 70,
+        height: 70,
+        fill: randomColor(),
+        stroke: randomColor(),
+        strokeWidth: 4,
+        draggable: true,
+    });
+}
+
+function addCircle (x, y) {
+    // Order of attributes matter when rendering on the Properties sidebar.
+    return addNode({
+        type: "circle",
+        name: "Circle",
+        id: self.crypto.randomUUID(),
         x: x,
         y: y,
         radius: 35,
-        fill: '#FF0000',
-        stroke: '#000000',
+        fill: randomColor(),
+        stroke: randomColor(),
         strokeWidth: 4,
         draggable: true,
-        id: self.crypto.randomUUID()
     });
+}
+
+function renderNode (node) {
+    switch (true) {
+        case node.type === "circle":
+            return new Konva.Circle(node);
+
+        case node.type === "rect":
+            return new Konva.Rect(node);
+
+        default:
+            throw new Error("Node type not recgonized.");
+    }
 }
 
 function renderNodeAttributes () {
@@ -79,23 +109,20 @@ function render () {
 
     layer.destroyChildren();
 
-    nodes.value.forEach((node) => {
-        const circle = new Konva.Circle(node);
-        layer.add(circle)
+    nodes.value.forEach((item) => {
+        const node = renderNode(item)
+        layer.add(node)
 
-        circle.addEventListener("click", () => focusedNode.value = circle);
+        node.addEventListener("click", () => focusedNode.value = node);
 
-        circle.addEventListener("pointerdown", () => {
-            // Set custom attributes
-            circle.setAttr("name", circle.name() || "Node");
-
+        node.addEventListener("pointerdown", () => {
             batch(() => {
-                focusedNode.value = circle;
+                focusedNode.value = node;
                 isPointerDown.value = true;
             });
         });
 
-        circle.addEventListener("pointerup", updateNodes);
+        node.addEventListener("pointerup", updateNodes);
     });
 
     generateSVG();
@@ -107,7 +134,7 @@ function updateNodes () {
 }
 
 function setup () {
-    // first we need to create a stage
+    // First we need to create a stage
     stage = new Konva.Stage({
         container: 'editor',
         width: 400,
@@ -118,23 +145,25 @@ function setup () {
     layer = new Konva.Layer();
     stage.add(layer);
 
+    // Import stuff
     importFromLocalStorage();
     setupEventListeners();
 
+    // Run stuff when signals change
     effect(saveToLocalStorage);
     effect(renderNodeAttributes);
     effect(render);
 }
 
-function renderSVGExport (svg, isPreview = false) {
+function renderSVGExport (svgDoc, isPreview = false) {
     const previewEl = document.querySelector(".export__body");
 
-    if (previewEl && svg) {
+    if (previewEl && svgDoc) {
         if (isPreview) {
-            previewEl.innerHTML = svg;
+            previewEl.innerHTML = svgDoc.outerHTML;
         } else {
             const codePreviewEl = document.createElement("code");
-            codePreviewEl.innerText = svg;
+            codePreviewEl.innerText = svgDoc.outerHTML;
 
             previewEl.innerHTML = null;
             previewEl.appendChild(codePreviewEl)
@@ -160,7 +189,7 @@ function postProcessSVG (svgCode) {
         }
     });
 
-    return svgDoc.documentElement.outerHTML;
+    return svgDoc.documentElement;
 }
 
 async function generateSVG () {
@@ -176,23 +205,12 @@ async function generateSVG () {
 }
 
 function showSVGPreview () {
-    const dialog = document.createElement("dialog");
+    const modal = createModal();
 
     if (svg.value) {
-        if (document.querySelector("dialog")) {
-            document.querySelector("dialog").remove();
-        }
-
-        document.body.appendChild(dialog);
-
-        dialog.innerHTML = svg.value;
-
-        const closeButton = document.createElement("button");
-        closeButton.textContent = "Close";
-        closeButton.addEventListener("click", () => dialog.close());
-        dialog.appendChild(closeButton);
-
-        dialog.showModal();
+        modal.innerHTML = renderConfigEditor(svg.value);
+        setupConfigEditorEvents(modal);
+        modal.showModal();
     }
 }
 
@@ -209,15 +227,20 @@ function setupEventListeners () {
 
             // Update nodes after drag ends
             clearTimeout(t);
-            t = setTimeout(updateNodes, 1000);
+            t = setTimeout(updateNodes, 500);
         }
     });
 
     addCircleButton.addEventListener("click", () => {
         const x = randomNumber(0, stage.width());
         const y = randomNumber(0, stage.height());
-
         addCircle(x, y);
+    });
+
+    addRectButton.addEventListener("click", () => {
+        const x = randomNumber(0, stage.width());
+        const y = randomNumber(0, stage.height());
+        addRect(x, y);
     });
 
     resetButton.addEventListener("click", () => {
@@ -231,6 +254,7 @@ function setupEventListeners () {
 
 const sidebarEl = document.querySelector(".sidebar__body");
 const addCircleButton = document.getElementById("add-circle");
+const addRectButton = document.getElementById("add-rect");
 const resetButton = document.getElementById("reset");
 const previewSVGButton = document.getElementById("preview-svg");
 
@@ -238,16 +262,8 @@ const isPointerDown = signal(false);
 const nodes = signal([]);
 const focusedNode = signal(null);
 const svg = signal(null);
+const config = signal({});
 
 let stage, layer;
 
 setup();
-
-// Just some debugging utilities
-
-function getNodeAttributes (node) {
-    return node.getAttrs();
-}
-
-window.getLayer = () => layer;
-window.getLayerChildren = () => layer.getChildren().map(getNodeAttributes);
